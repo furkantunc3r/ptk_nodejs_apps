@@ -63,6 +63,18 @@ app.post('/posts', async (req, res) => {
     res.redirect('/');
 });
 
+app.get('/post/:id', async (req, res) => {
+    try {
+        const post = await Post.findById(req.params.id);
+
+        res.render('post', {
+            post
+        });
+    } catch (error) {
+        console.log(error, 'Failed to get post');
+    }
+});
+
 // LISTENER
 app.listen(3000, () => {
     console.log(`App listening on: ${ process.env.PORT }`);
