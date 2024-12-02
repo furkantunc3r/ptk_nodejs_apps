@@ -1,18 +1,24 @@
 const express = require('express');
 const mongoose = require('mongoose');
+const methodOverride = require('method-override');
 
 const ejs = require('ejs');
 const path = require('path');
 const Post = require('./models/Post');
+const postController = require('./controllers/postController');
 
 const app = express();
 
 // Connect to DB
-try {
-    mongoose.connect(process.env.DB_CONNECTION);
-} catch (error) {
-    console.log(error, 'Failed Connection to DB');
-}
+const connectDB = async () => {
+    try {
+        await mongoose.connect(process.env.DB_CONNECTION);
+    } catch (error) {
+        console.log(error, 'Failed Connection to DB');
+    }
+};
+
+connectDB();
 
 // TEMPLATE ENGINE
 app.set('view engine', 'ejs');
@@ -23,56 +29,20 @@ app.use(express.urlencoded({
     extended: true
 }));
 app.use(express.json());
+app.use(methodOverride('_method', {
+    methods: ['POST', 'GET']
+}));
 
 // ENDPOINTS
-app.get('/', async (req, res) => {
-    try {
-        const posts = await Post.find();
-
-        res.render('index', {
-            posts
-        });
-    } catch (error) {
-        console.log(error, 'Can not get posts');
-    }
-});
-
+app.get('/', postController.getAllPosts);
+app.get('/post/:id', postController.getPost);
+app.post('/posts', postController.createPost);
+app.get('/add', postController.createPostGet);
+app.get('/edit/:id', postController.editPostGet);
+app.put('/edit/:id', postController.editPost);
+app.delete('/delete/:id', postController.deletePost);
 app.get('/about', (req, res) => {
     res.render('about');
-});
-
-app.get('/add', (req, res) => {
-    res.render('add');
-});
-
-app.post('/posts', async (req, res) => {
-    const {
-        title,
-        description
-    } = req.body;
-
-    try {
-        await Post.create({
-            title,
-            description
-        });
-    } catch (error) {
-        console.log(error, 'Failed to create');
-    }
-
-    res.redirect('/');
-});
-
-app.get('/post/:id', async (req, res) => {
-    try {
-        const post = await Post.findById(req.params.id);
-
-        res.render('post', {
-            post
-        });
-    } catch (error) {
-        console.log(error, 'Failed to get post');
-    }
 });
 
 // LISTENER
